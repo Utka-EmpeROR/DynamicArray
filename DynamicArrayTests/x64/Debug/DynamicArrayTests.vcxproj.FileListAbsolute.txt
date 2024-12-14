@@ -1,0 +1,1 @@
+C:\Users\maxim\source\repos\DynamicArray\DynamicArrayTests\x64\Debug\DynamicArrayTests.vcxproj.CopyComplete
