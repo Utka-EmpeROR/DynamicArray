@@ -1,186 +1,207 @@
 #include <assert.h>
 #include <memory>
+#include <cstdlib>
+#include <utility>
 
 
 template <typename T>
 class Array {
 private:
-    T* data;
-    int capacity;
-    int count;
+    T* _data;
+    int _capacity;
+    int _size;
 
     void resize(int newCapacity) {
         T* newData = static_cast<T*>(malloc(newCapacity * sizeof(T)));
-        assert(newData);
-
-        for (int i = 0; i < count; ++i) {
-            new (newData + i) T(std::move(data[i]));
-            data[i].~T();
+        if (!newData) {
+            throw std::bad_alloc();
         }
-
-        free(data);
-        data = newData;
-        capacity = newCapacity;
+        for (int i = 0; i < _size; ++i) {
+            new (newData + i) T(std::move(_data[i]));
+            _data[i].~T();
+        }
+        free(_data);
+        _data = newData;
+        _capacity = newCapacity;
     }
 
 public:
     Array() : Array(16) {}
-    Array(int initialCapacity) : data(nullptr), capacity(initialCapacity), count(0) {
-        data = static_cast<T*>(malloc(capacity * sizeof(T)));
-        assert(data);
-    }
 
     ~Array() {
-        for (int i = 0; i < count; ++i) {
-            data[i].~T();
+        for (int i = 0; i < _size; ++i) {
+            _data[i].~T();
         }
-        free(data);
+        free(_data);
+        _size = 0;
     }
 
-    Array(const Array& other) : data(nullptr), capacity(other.capacity), count(other.count) {
-        data = static_cast<T*>(malloc(capacity * sizeof(T)));
-        assert(data);
+    Array(int newSize) : _capacity(newSize), _size(0)
+    {
+        _data = static_cast<T*>(malloc(_capacity * sizeof(T)));
 
-        for (int i = 0; i < count; ++i) {
-            new (data + i) T(other.data[i]);
+        if (!_data) {
+            throw std::bad_alloc();
+        }
+    }
+
+
+    Array(const Array& other) : _capacity(other._capacity), _size(other._size) {
+        _data = static_cast<T*>(malloc(_capacity * sizeof(T)));
+        if (!_data) {
+            throw std::bad_alloc();
+        }
+
+        for (int i = 0; i < _size; ++i) {
+            new (_data + i) T(other._data[i]);
         }
     }
 
     Array& operator=(const Array& other) {
         if (this == &other) return *this;
 
-        for (int i = 0; i < count; ++i) {
-            data[i].~T();
+        for (int i = 0; i < _size; ++i) {
+            _data[i].~T();
         }
-        free(data);
+        free(_data);
 
-        capacity = other.capacity;
-        count = other.count;
-        data = static_cast<T*>(malloc(capacity * sizeof(T)));
-        assert(data);
+        _capacity = other._capacity;
+        _size = other._size;
+        _data = static_cast<T*>(malloc(_capacity * sizeof(T)));
+        assert(_data);
 
-        for (int i = 0; i < count; ++i) {
-            new (data + i) T(other.data[i]);
+        for (int i = 0; i < _size; ++i) {
+            new (_data + i) T(other._data[i]);
         }
 
         return *this;
     }
 
     int insert(const T& value) {
-        if (count == capacity) {
-            resize(capacity * 2);
-        }
-        new (data + count) T(value);
-        return count++;
+        return insert(_size, value);
     }
 
     int insert(int index, const T& value) {
-        assert(index >= 0 && index <= count);
+        assert(index >= 0 && index <= _size);
 
-        if (count == capacity) {
-            resize(capacity * 2);
+        if (_size == _capacity) {
+            resize(_capacity * 2);
+        }
+        for (int i = _size; i > index; --i) {
+            if (std::is_move_constructible_v<T>) {
+                new (_data + i) T(std::move(_data[i - 1]));
+            }
+            else {
+                new (_data + i) T(_data[i - 1]);
+                _data[i - 1].~T();
+            }
         }
 
-        for (int i = count; i > index; --i) {
-            new (data + i) T(std::move(data[i - 1]));
-            data[i - 1].~T();
-        }
-
-        new (data + index) T(value);
-        ++count;
+        new (_data + index) T(value);
+        ++_size;
         return index;
     }
 
     void remove(int index) {
-        assert(index >= 0 && index < count);
+        assert(index >= 0 && index < _size);
 
-        data[index].~T();
-        for (int i = index; i < count - 1; ++i) {
-            new (data + i) T(std::move(data[i + 1]));
-            data[i + 1].~T();
+        _data[index].~T();
+
+        if constexpr (std::is_move_constructible_v<T>) {
+            for (int i = index; i < _size - 1; ++i) {
+                new (_data + i) T(std::move(_data[i + 1]));
+                _data[i + 1].~T();
+            }
         }
-        --count;
+        else {
+            for (int i = index; i < _size - 1; ++i) {
+                new (_data + i) T(_data[i - 1]);
+                _data[i - 1].~T();
+            }
+        }
+        
+        _size--;
     }
 
     const T& operator[](int index) const {
-        assert(index >= 0 && index < count);
-        return data[index];
+        assert(index >= 0 && index < _size);
+        return _data[index];
     }
 
     T& operator[](int index) {
-        assert(index >= 0 && index < count);
-        return data[index];
+        assert(index >= 0 && index < _size);
+        return _data[index];
     }
 
     int size() const {
-        return count;
+        return _size;
     }
 
-    T* begin() { return data; }
-    T* end() { return data + count; }
+    T* begin() { return _data; }
+    T* end() { return _data + _size; }
 
 
     class Iterator {
     private:
-        T* current;
-        T* end;
+        T* _current;
+        T* _end;
 
     public:
-        Iterator(T* start, T* end) : current(start), end(end) {}
+        Iterator(T* _start, T* _end) : _current(_start), _end(_end) {}
 
         const T& get() const {
-            assert(current < end);
-            return *current;
+            assert(_current < _end);
+            return *_current;
         }
 
         void set(const T& value) {
-            assert(current < end);
-            *current = value;
+            assert(_current < _end);
+            *_current = value;
         }
 
         void next() {
-            assert(current < end);
-            ++current;
+            assert(_current < _end);
+            ++_current;
         }
 
         bool hasNext() const {
-            return current < end;
+            return _current < _end;
         }
     };
 
     class ReverseIterator {
     private:
-        T* current;
-        T* start;
+        T* _current;
+        T* _start;
 
     public:
-        ReverseIterator(T* start, T* end) : current(end - 1), start(start) {}
+        ReverseIterator(T* _start, T* _end) : _current(_end - 1), _start(_start) {}
 
         const T& get() const {
-            assert(current >= start);
-            return *current;
+            assert(_current >= _start);
+            return *_current;
         }
 
         void set(const T& value) {
-            assert(current >= start);
-            *current = value;
+            assert(_current >= _start);
+            *_current = value;
         }
 
         void next() {
-            assert(current >= start);
-            --current;
+            assert(_current >= _start);
+            --_current;
         }
 
         bool hasNext() const {
-            return current >= start;
+            return _current >= _start;
         }
     };
 
     Iterator iterator() {
-        return Iterator(data, data + count);
+        return Iterator(_data, _data + _size);
     }
 
     ReverseIterator reverseIterator() {
-        return ReverseIterator(data, data + count);
+        return ReverseIterator(_data, _data + _size);
     }
 };

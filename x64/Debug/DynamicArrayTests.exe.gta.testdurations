@@ -11,5 +11,27 @@
     <TestDuration Test="ArrayTest.ResizeFunctionality" Duration="1" />
     <TestDuration Test="ArrayTest.CopyConstructor" Duration="1" />
     <TestDuration Test="ArrayTest.AssignmentOperator" Duration="1" />
+    <TestDuration Test="Constructor." Duration="1" />
+    <TestDuration Test="Constructor_with_param." Duration="1" />
+    <TestDuration Test="Insert." Duration="1" />
+    <TestDuration Test="Insert_with_index." Duration="1" />
+    <TestDuration Test="Remove." Duration="1" />
+    <TestDuration Test="Copy_constructor." Duration="1" />
+    <TestDuration Test="Move_constructor." Duration="1" />
+    <TestDuration Test="Copy_assignment_operator." Duration="1" />
+    <TestDuration Test="Move_assignment_operator." Duration="1" />
+    <TestDuration Test="Iterators." Duration="1" />
+    <TestDuration Test="Reverse_iterators." Duration="1" />
+    <TestDuration Test="String_Constructor." Duration="1" />
+    <TestDuration Test="String_Constructor_with_param." Duration="1" />
+    <TestDuration Test="String_Insert." Duration="1" />
+    <TestDuration Test="String_Insert_with_index." Duration="1" />
+    <TestDuration Test="String_Remove." Duration="1" />
+    <TestDuration Test="String_Copy_constructor." Duration="1" />
+    <TestDuration Test="String_Move_constructor." Duration="1" />
+    <TestDuration Test="String_Copy_assignment_operator." Duration="1" />
+    <TestDuration Test="String_Move_assignment_operator." Duration="3" />
+    <TestDuration Test="String_Iterators." Duration="1" />
+    <TestDuration Test="String_Reverse_iterators." Duration="1" />
   </TestDurations>
 </GtaTestDurations>

@@ -3,6 +3,7 @@
 
 int main()
 {
+    
     Array<int> a;
     for (int i = 0; i < 10; ++i)
         a.insert(i + 1);
@@ -15,7 +16,5 @@ int main()
     for (const auto& item : a) {
         std::cout << item << std::endl;
     }
-
-
 }
 
